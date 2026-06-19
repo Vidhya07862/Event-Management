@@ -1,0 +1,46 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# Compiled paths and build outputs
+dist/
+build/
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Databases and Local Data
+backend/data/
+*.db
+*.mv.db
+*.trace.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary / Scratch Files
+ddg.txt
+unsplash.txt
+unsplash_napi.txt
+temp/
+scratch/
+.antigravityignore
