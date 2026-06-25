@@ -18,15 +18,18 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final EventRepository eventRepository;
     private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
 
     public BookingService(
             BookingRepository bookingRepository,
             EventRepository eventRepository,
-            PaymentRepository paymentRepository
+            PaymentRepository paymentRepository,
+            NotificationService notificationService
     ) {
         this.bookingRepository = bookingRepository;
         this.eventRepository = eventRepository;
         this.paymentRepository = paymentRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -105,6 +108,14 @@ public class BookingService {
             payment.setPaymentStatus("FAILED");
             paymentRepository.save(payment);
         }
+
+        // Notify the organizer about the ticket cancellation
+        String formattedBookingId = "#EVT-" + String.format("%06d", booking.getId());
+        String notificationMessage = "⚠️ Attendee '" + booking.getUser().getName() + "' has cancelled their booking (" + 
+                                     formattedBookingId + ") for your event '" + booking.getEvent().getTitle() + 
+                                     "' (Ticket count: " + booking.getTicketCount() + ").";
+        
+        notificationService.createNotification(booking.getEvent().getOrganizer(), notificationMessage);
 
         return savedBooking;
     }

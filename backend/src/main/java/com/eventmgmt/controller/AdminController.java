@@ -64,4 +64,9 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> getDashboardStats() {
         return ResponseEntity.ok(adminService.getDashboardStats());
     }
+
+    @GetMapping("/events")
+    public ResponseEntity<List<Event>> getAllEvents() {
+        return ResponseEntity.ok(eventService.getAllEvents());
+    }
 }

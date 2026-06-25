@@ -48,7 +48,11 @@ const Register = () => {
 
     try {
       const user = await register(name, email, password, role, phone);
-      if (user.role === 'ROLE_ORGANIZER') {
+      // Save password for quick login autofill on the login page
+      localStorage.setItem(`demo_pass_${email.toLowerCase().trim()}`, password);
+      if (user.role === 'ROLE_ADMIN') {
+        navigate('/admin-dashboard');
+      } else if (user.role === 'ROLE_ORGANIZER') {
         navigate('/organizer-dashboard');
       } else {
         navigate('/user-dashboard');
@@ -228,11 +232,22 @@ const Register = () => {
                 Organizer
                 <span className="block text-[9px] font-normal opacity-85 mt-0.5">Create & Host</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setRole('ROLE_ADMIN')}
+                className={`relative z-10 flex-1 py-3 text-xs font-bold rounded-lg transition-all duration-300 ${
+                  role === 'ROLE_ADMIN' ? 'text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                Admin
+                <span className="block text-[9px] font-normal opacity-85 mt-0.5">Control Center</span>
+              </button>
               
               {/* Sliding Background Capsule */}
               <div 
-                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-gradient-brand transition-all duration-300 shadow-md ${
-                  role === 'ROLE_USER' ? 'left-1' : 'left-[calc(50%+2px)]'
+                className={`absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-lg bg-gradient-brand transition-all duration-300 shadow-md ${
+                  role === 'ROLE_USER' ? 'left-1' : role === 'ROLE_ORGANIZER' ? 'left-[calc(33.33%+1px)]' : 'left-[calc(66.66%+2px)]'
                 }`}
               />
             </div>

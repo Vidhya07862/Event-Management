@@ -5,57 +5,15 @@ import { CheckCircle2, Calendar, MapPin, Ticket, CreditCard, ArrowLeft, Printer 
 import confetti from 'canvas-confetti';
 
 const TicketQRCode = ({ bookingId }) => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const size = 120;
-    canvas.width = size;
-    canvas.height = size;
-
-    // Clear and draw white background
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, size, size);
-
-    // Draw QR Code Finder Patterns
-    const drawAnchor = (x, y) => {
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x, y, 20, 20);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(x + 3, y + 3, 14, 14);
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x + 6, y + 6, 8, 8);
-    };
-
-    drawAnchor(3, 3);          // Top-Left
-    drawAnchor(97, 3);         // Top-Right
-    drawAnchor(3, 97);         // Bottom-Left
-
-    // Draw some random pixels representing data
-    ctx.fillStyle = '#000000';
-    const seed = bookingId * 17; // deterministic seed based on booking ID
-    let randomVal = seed;
-
-    for (let row = 0; row < 30; row++) {
-      for (let col = 0; col < 30; col++) {
-        // Exclude finder pattern regions
-        const isFinder = (row < 6 && col < 6) || (row < 6 && col >= 24) || (row >= 24 && col < 6);
-        if (isFinder) continue;
-
-        // Deterministic pseudo-random logic
-        randomVal = (randomVal * 9301 + 49297) % 233280;
-        if (randomVal / 233280 > 0.5) {
-          ctx.fillRect(col * 4, row * 4, 4, 4);
-        }
-      }
-    }
-  }, [bookingId]);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=EVT-${bookingId}`;
 
   return (
     <div className="flex flex-col items-center justify-center p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200/40 dark:border-slate-800/40 shrink-0">
-      <canvas ref={canvasRef} className="rounded-lg shadow-sm bg-white p-1"></canvas>
+      <img
+        src={qrUrl}
+        alt={`QR Code for Booking #${bookingId}`}
+        className="rounded-lg shadow-sm bg-white p-1 w-[120px] h-[120px]"
+      />
       <span className="text-[8px] uppercase font-bold tracking-widest text-slate-400 mt-1 select-none">Scan Pass</span>
     </div>
   );

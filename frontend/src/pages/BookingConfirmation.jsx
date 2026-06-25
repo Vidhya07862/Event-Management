@@ -6,57 +6,15 @@ import { CheckCircle2, Calendar, MapPin, Ticket, CreditCard, ArrowLeft, Printer,
 import confetti from 'canvas-confetti';
 
 const TicketQRCode = ({ bookingId }) => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const size = 160;
-    canvas.width = size;
-    canvas.height = size;
-
-    // Clear and draw white background
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, size, size);
-
-    // Draw QR Code Finder Patterns (anchors at three corners)
-    const drawAnchor = (x, y) => {
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x, y, 28, 28);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(x + 4, y + 4, 20, 20);
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x + 8, y + 8, 12, 12);
-    };
-
-    drawAnchor(4, 4);          // Top-Left
-    drawAnchor(128, 4);        // Top-Right
-    drawAnchor(4, 128);        // Bottom-Left
-
-    // Draw some random pixels representing data
-    ctx.fillStyle = '#000000';
-    const seed = bookingId * 17; // deterministic seed based on booking ID
-    let randomVal = seed;
-    
-    for (let row = 0; row < 40; row++) {
-      for (let col = 0; col < 40; col++) {
-        // Exclude finder pattern regions
-        const isFinder = (row < 8 && col < 8) || (row < 8 && col >= 32) || (row >= 32 && col < 8);
-        if (isFinder) continue;
-
-        // Deterministic pseudo-random logic
-        randomVal = (randomVal * 9301 + 49297) % 233280;
-        if (randomVal / 233280 > 0.5) {
-          ctx.fillRect(col * 4, row * 4, 4, 4);
-        }
-      }
-    }
-  }, [bookingId]);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=EVT-${bookingId}`;
 
   return (
     <div className="flex flex-col items-center justify-center space-y-2.5 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200/40 dark:border-slate-800/40 shrink-0">
-      <canvas ref={canvasRef} className="rounded-lg shadow-sm bg-white p-1.5"></canvas>
+      <img
+        src={qrUrl}
+        alt={`QR Code for Booking #${bookingId}`}
+        className="rounded-lg shadow-sm bg-white p-1.5 w-[160px] h-[160px]"
+      />
       <span className="text-[9px] uppercase font-bold tracking-widest text-slate-400 select-none">Scan at Entrance</span>
     </div>
   );

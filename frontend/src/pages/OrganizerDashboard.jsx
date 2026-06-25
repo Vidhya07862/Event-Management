@@ -2,22 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, MapPin, DollarSign, Users, Trash2, Plus, Edit3, X, Eye, FileText, BarChart2, ArrowLeft, QrCode, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Calendar, MapPin, DollarSign, Users, Trash2, Plus, Edit3, X, Eye, FileText, BarChart2, ArrowLeft, QrCode, CheckCircle2, AlertTriangle, ShieldCheck, Mail } from 'lucide-react';
+import QRScanner from '../components/QRScanner';
 
 const PRESET_IMAGES = [
-  { name: 'Music & Concert', keywords: ['music', 'concert', 'beats', 'band', 'festival', 'dj', 'dance', 'song', 'jazz', 'rock', 'pop', 'sing'], url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Tech & Coding', keywords: ['tech', 'summit', 'conference', 'global', 'silicon', 'ai', 'coding', 'software', 'development', 'developer', 'hacker', 'web', 'data'], url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Yoga & Health', keywords: ['yoga', 'meditation', 'mindfulness', 'zen', 'breath', 'peace', 'healthy', 'fitness', 'wellness', 'stretch'], url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Art & Painting', keywords: ['art', 'graffiti', 'paint', 'drawing', 'canvas', 'workshop', 'creative', 'exhibition', 'sculpture'], url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Food & Drink', keywords: ['food', 'cook', 'chef', 'wine', 'dining', 'dinner', 'tasting', 'drink', 'beer', 'brunch', 'coffee', 'bakery'], url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Sports & Fitness', keywords: ['sports', 'run', 'marathon', 'fitness', 'gym', 'football', 'soccer', 'basketball', 'match', 'game', 'race', 'bicycle'], url: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Business & Pitch', keywords: ['business', 'meeting', 'seminar', 'workshop', 'finance', 'startup', 'pitch', 'investment', 'marketing', 'sales'], url: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Party & Nightlife', keywords: ['party', 'club', 'bar', 'celebration', 'birthday', 'night', 'pub', 'lounge', 'social'], url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Education & Seminar', keywords: ['education', 'seminar', 'lecture', 'whiteboard', 'class', 'school', 'learn', 'university', 'study'], url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Movies & Cinema', keywords: ['movie', 'movies', 'cinema', 'theater', 'film', 'screening', 'hollywood', 'popcorn'], url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Nature & Outdoors', keywords: ['nature', 'outdoor', 'outdoors', 'hike', 'hiking', 'forest', 'mountain', 'camp', 'camping', 'park', 'beach'], url: 'https://images.unsplash.com/photo-1533240332313-0db49b439ad3?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Networking Meetup', keywords: ['networking', 'meetup', 'meet', 'lounge', 'hangout', 'socializing', 'connect', 'community'], url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80' }
+  { name: 'Rock Concert Stage', category: 'Music & Concert', url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Live DJ Performance', category: 'Music & Concert', url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Outdoor Music Festival', category: 'Music & Concert', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80' },
+  
+  { name: 'Developer Coding Workspace', category: 'Tech & Coding', url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Artificial Intelligence Expo', category: 'Tech & Coding', url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Modern Tech Summit', category: 'Tech & Coding', url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'Peaceful Yoga Studio', category: 'Yoga & Health', url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Sunset Group Meditation', category: 'Yoga & Health', url: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Wellness Healthy Diet', category: 'Yoga & Health', url: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'Graffiti Canvas painting', category: 'Art & Painting', url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Watercolor Creative Studio', category: 'Art & Painting', url: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Pottery & Ceramics Workshop', category: 'Art & Painting', url: 'https://images.unsplash.com/photo-1565192647048-f997ed87f5e2?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'Fine Dining Gourmet Meal', category: 'Food & Drink', url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Luxury Wine Tasting', category: 'Food & Drink', url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Artisan Coffee Roastery', category: 'Food & Drink', url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'Professional Running Track', category: 'Sports & Fitness', url: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Crossfit Athletes Training', category: 'Sports & Fitness', url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Mountain Cycling Adventure', category: 'Sports & Fitness', url: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'Business Boardroom Presentation', category: 'Business & Pitch', url: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Executive Meeting Pitch', category: 'Business & Pitch', url: 'https://images.unsplash.com/photo-1542744094-3a31f103e35f?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Co-Working Startup Hub', category: 'Business & Pitch', url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'Nightclub Crowd Dance', category: 'Party & Nightlife', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Classy Cocktail Lounge', category: 'Party & Nightlife', url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Celebration Confetti Party', category: 'Party & Nightlife', url: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'University Lecture Seminar', category: 'Education & Seminar', url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Collaborative Whiteboard Session', category: 'Education & Seminar', url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'Retro Cinema Seats', category: 'Movies & Cinema', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Red Carpet Gala Event', category: 'Movies & Cinema', url: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80' },
+
+  { name: 'Wilderness Camping Tents', category: 'Nature & Outdoors', url: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Sandy Beach Sunset', category: 'Nature & Outdoors', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80' }
 ];
+
 
 const extractKeywords = (text) => {
   if (!text) return '';
@@ -81,6 +111,7 @@ const OrganizerDashboard = () => {
   const [suggestQuery, setSuggestQuery] = useState('');
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [imageConfirmed, setImageConfirmed] = useState(false);
+  const [selectedCoverCat, setSelectedCoverCat] = useState('All');
 
   const fetchImageSuggestions = async (query) => {
     if (!query || !query.trim()) return;
@@ -117,6 +148,80 @@ const OrganizerDashboard = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [title, description]);
 
+  // Notification states
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/notifications');
+      const data = res.data || [];
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.read).length);
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  };
+
+  const markNotificationsAsRead = async () => {
+    try {
+      await api.put('/notifications/read');
+      setUnreadCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Failed to mark notifications as read', err);
+    }
+  };
+
+  // Mailbox/Message states
+  const [messages, setMessages] = useState([]);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [showMailboxModal, setShowMailboxModal] = useState(false);
+
+  const fetchMessages = async () => {
+    setMessagesLoading(true);
+    try {
+      const res = await api.get('/messages/inbox');
+      const data = res.data || [];
+      setMessages(data);
+      setUnreadMessagesCount(data.filter(m => !m.read).length);
+    } catch (err) {
+      console.error('Failed to fetch messages', err);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const handleMarkMessageAsRead = async (messageId) => {
+    try {
+      await api.put(`/messages/${messageId}/read`);
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, read: true } : m));
+      setUnreadMessagesCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark message as read', err);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('Are you sure you want to delete this message?')) return;
+    try {
+      await api.delete(`/messages/${messageId}`);
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      setUnreadMessagesCount(prev => {
+        const wasUnread = messages.find(m => m.id === messageId && !m.read);
+        return wasUnread ? Math.max(0, prev - 1) : prev;
+      });
+      if (selectedMessage && selectedMessage.id === messageId) {
+        setSelectedMessage(null);
+        setShowMailboxModal(false);
+      }
+    } catch (err) {
+      console.error('Failed to delete message', err);
+    }
+  };
+
   const fetchOrganizerData = async () => {
     try {
       const eventsRes = await api.get('/events/organizer');
@@ -134,6 +239,8 @@ const OrganizerDashboard = () => {
   useEffect(() => {
     if (user) {
       fetchOrganizerData();
+      fetchNotifications();
+      fetchMessages();
     }
   }, [user]);
 
@@ -226,12 +333,13 @@ const OrganizerDashboard = () => {
     setShowAttendeeModal(true);
   };
 
-  const handleScanVerify = async (e) => {
-    e?.preventDefault();
-    if (!scanInput.trim()) return;
+  const handleScanVerify = async (e, manualCode = null) => {
+    if (e) e?.preventDefault();
+    const inputVal = manualCode || scanInput;
+    if (!inputVal || !inputVal.trim()) return;
 
     // Clean up input: extract digit ID if formatted like #EVT-000012
-    const cleanId = scanInput.replace(/#?EVT-/i, '').replace(/\D/g, '');
+    const cleanId = inputVal.replace(/#?EVT-/i, '').replace(/\D/g, '');
     if (!cleanId) {
       setScanResult({
         success: false,
@@ -261,6 +369,7 @@ const OrganizerDashboard = () => {
       };
       setRecentScans(prev => [newScan, ...prev.slice(0, 4)]);
       setScanInput('');
+      fetchOrganizerData(); // Refresh list to show checked in
     } catch (err) {
       console.error(err);
       const status = err.response?.status;
@@ -341,6 +450,42 @@ const OrganizerDashboard = () => {
           }`}
         >
           📷 QR Entry Scanner
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('notifications');
+            markNotificationsAsRead();
+          }}
+          className={`py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+            activeTab === 'notifications'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
+          }`}
+        >
+          🔔 Notifications
+          {unreadCount > 0 && (
+            <span className="bg-rose-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('mailbox');
+            fetchMessages();
+          }}
+          className={`py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+            activeTab === 'mailbox'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'
+          }`}
+        >
+          📬 Mailbox
+          {unreadMessagesCount > 0 && (
+            <span className="bg-brand-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-pulse">
+              {unreadMessagesCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -479,7 +624,7 @@ const OrganizerDashboard = () => {
             )}
           </div>
         </>
-      ) : (
+      ) : activeTab === 'scanner' ? (
         /* Scanner Simulator Tab */
         <div className="grid md:grid-cols-3 gap-8">
           {/* Left: Scanner Simulator Card */}
@@ -497,33 +642,16 @@ const OrganizerDashboard = () => {
                 </p>
               </div>
 
-              {/* Simulated Camera Feed Viewport */}
-              <div className="relative w-full max-w-[340px] aspect-square rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950/95 shadow-2xl flex flex-col items-center justify-center">
-                {/* Frosted Lens Border Grid */}
-                <div className="absolute inset-6 border border-white/20 rounded-2xl pointer-events-none"></div>
-                
-                {/* Scanning Laser Line (Animated) */}
-                <div className="absolute left-6 right-6 h-0.5 bg-gradient-to-r from-red-500/30 via-red-500 to-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-scan pointer-events-none"></div>
-
-                {/* Corner Targets */}
-                <div className="absolute top-8 left-8 w-6 h-6 border-t-2 border-l-2 border-white rounded-tl"></div>
-                <div className="absolute top-8 right-8 w-6 h-6 border-t-2 border-r-2 border-white rounded-tr"></div>
-                <div className="absolute bottom-8 left-8 w-6 h-6 border-b-2 border-l-2 border-white rounded-bl"></div>
-                <div className="absolute bottom-8 right-8 w-6 h-6 border-b-2 border-r-2 border-white rounded-br"></div>
-
-                {/* Scanning graphics */}
-                <div className="space-y-2 select-none text-center">
-                  <span className="inline-block p-4 rounded-full bg-white/5 border border-white/10 text-white/50 animate-pulse text-2xl">
-                    🎥
-                  </span>
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500">Camera Feed Active</p>
-                </div>
-              </div>
+              {/* Real QR Code Scanner Component */}
+              <QRScanner
+                onScanSuccess={(decodedText) => handleScanVerify(null, decodedText)}
+                onScanFailure={(error) => console.log('Scanner error:', error)}
+              />
 
               {/* Scan input Form */}
-              <form onSubmit={handleScanVerify} className="w-full max-w-[340px] space-y-3">
+              <form onSubmit={handleScanVerify} className="w-full max-w-[340px] space-y-3 pt-4 border-t border-slate-250 dark:border-slate-850">
                 <div className="space-y-1 text-left">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Enter Booking Code manually</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Or enter Booking Code manually</label>
                   <input
                     type="text"
                     required
@@ -682,6 +810,144 @@ const OrganizerDashboard = () => {
               )}
             </div>
           </div>
+        </div>
+      ) : activeTab === 'notifications' ? (
+        /* Notifications Tab */
+        <div className="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-lg space-y-6">
+          <div className="flex justify-between items-center pb-4 border-b border-slate-200/50 dark:border-slate-850">
+            <div>
+              <h2 className="font-bold text-lg font-display">Notification Center</h2>
+              <p className="text-xs text-slate-405 dark:text-slate-400 mt-0.5">Updates regarding event approvals and ticket cancellations.</p>
+            </div>
+            <button
+              onClick={markNotificationsAsRead}
+              className="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-705 px-3.5 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white font-bold transition-all border border-slate-200 dark:border-slate-700"
+            >
+              Mark all as read
+            </button>
+          </div>
+
+          {notifications.length > 0 ? (
+            <div className="divide-y divide-slate-150 dark:divide-slate-850 space-y-3">
+              {notifications.map((notif) => (
+                <div key={notif.id} className={`py-4 flex gap-4 items-start transition-all ${!notif.read ? 'bg-slate-50/50 dark:bg-slate-900/30 px-3.5 rounded-xl border-l-4 border-brand-500' : 'px-3.5'}`}>
+                  <span className="text-lg mt-0.5 shrink-0">
+                    {notif.message.includes('reject') ? '❌' : '⚠️'}
+                  </span>
+                  <div className="space-y-1 text-left flex-1">
+                    <p className="text-sm font-semibold text-slate-850 dark:text-slate-200 leading-normal">
+                      {notif.message}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-bold font-mono uppercase tracking-wider">
+                      {new Date(notif.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-16 text-center text-slate-400 text-sm">
+              No notifications received yet.
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Mailbox Tab */
+        <div className="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-lg space-y-6">
+          <div className="flex justify-between items-center pb-4 border-b border-slate-200/50 dark:border-slate-850">
+            <div>
+              <h2 className="font-bold text-lg font-display flex items-center gap-2">
+                📬 Organizer Mailbox
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Emails and inquiries sent by attendees regarding your hosted events.
+              </p>
+            </div>
+            <span className="text-xs bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl text-slate-500 font-bold">
+              {unreadMessagesCount} unread • {messages.length} total
+            </span>
+          </div>
+
+          {messagesLoading ? (
+            <div className="p-16 text-center text-slate-400 animate-pulse">
+              Loading mailbox messages...
+            </div>
+          ) : messages.length > 0 ? (
+            <div className="space-y-4">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    !msg.read
+                      ? 'border-brand-500/40 bg-brand-500/[0.02] dark:bg-brand-500/[0.04]'
+                      : 'border-slate-200 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/20'
+                  }`}
+                >
+                  <div className="space-y-2 text-left flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {!msg.read && (
+                        <span className="h-2 w-2 rounded-full bg-brand-500 shrink-0"></span>
+                      )}
+                      <span className="text-xs font-bold text-slate-400 font-mono">
+                        #MSG-{msg.id.toString().padStart(6, '0')}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-105 text-slate-700 dark:bg-slate-800 dark:text-slate-350">
+                        Event: {msg.event.title}
+                      </span>
+                    </div>
+                    
+                    <h3 className="font-bold text-base text-slate-850 dark:text-white leading-tight">
+                      {msg.subject}
+                    </h3>
+                    
+                    <div className="text-xs text-slate-505 dark:text-slate-400 space-y-0.5">
+                      <p>
+                        From: <strong className="font-semibold text-slate-750 dark:text-slate-300">{msg.senderName}</strong> ({msg.senderEmail})
+                      </p>
+                      <p className="text-[10px] font-medium text-slate-400">
+                        Received on: {new Date(msg.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <button
+                      onClick={() => {
+                        setSelectedMessage(msg);
+                        setShowMailboxModal(true);
+                        if (!msg.read) {
+                          handleMarkMessageAsRead(msg.id);
+                        }
+                      }}
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-200 font-bold text-xs rounded-xl transition-all"
+                    >
+                      Read Letter
+                    </button>
+                    {!msg.read && (
+                      <button
+                        onClick={() => handleMarkMessageAsRead(msg.id)}
+                        className="p-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 rounded-xl text-slate-500 hover:text-brand-500 transition-colors"
+                        title="Mark as Read"
+                      >
+                        <CheckCircle2 className="h-4.5 w-4.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteMessage(msg.id)}
+                      className="p-2 border border-slate-200 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl text-slate-500 hover:text-red-500 transition-colors"
+                      title="Delete Message"
+                    >
+                      <Trash2 className="h-4.5 w-4.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-16 text-center text-slate-400 text-sm">
+              Your inbox is clean! No email letters received yet.
+            </div>
+          )}
         </div>
       )}
 
@@ -931,27 +1197,59 @@ const OrganizerDashboard = () => {
 
                 {/* Preset Categories */}
                 <div className="space-y-1.5 pt-0.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Or choose a preset cover category:</span>
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                    {PRESET_IMAGES.map((preset) => (
+                {/* Premium Curated Cover Photo Library */}
+                <div className="border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-4 bg-slate-50/50 dark:bg-slate-950/20 space-y-3">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wide text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
+                    🖼️ Curated Premium Cover Gallery
+                  </span>
+                  
+                  {/* Category tabs */}
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    {['All', 'Music & Concert', 'Tech & Coding', 'Yoga & Health', 'Art & Painting', 'Food & Drink', 'Sports & Fitness', 'Business & Pitch', 'Party & Nightlife', 'Education & Seminar', 'Movies & Cinema', 'Nature & Outdoors'].map((cat) => (
                       <button
-                        key={preset.name}
+                        key={cat}
                         type="button"
-                        onClick={() => {
-                          const kw = preset.name.split(' & ')[0].toLowerCase();
-                          setSuggestQuery(kw);
-                          fetchImageSuggestions(kw);
-                        }}
-                        className={`px-3 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap border shrink-0 transition-all ${
-                          suggestQuery === preset.name.split(' & ')[0].toLowerCase()
-                            ? 'border-teal-500 bg-teal-50/20 text-teal-600 dark:text-teal-400'
-                            : 'border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850'
+                        onClick={() => setSelectedCoverCat(cat)}
+                        className={`px-2.5 py-1 rounded-lg text-[9px] font-bold whitespace-nowrap border shrink-0 transition-all ${
+                          selectedCoverCat === cat
+                            ? 'border-teal-500 bg-teal-500 text-white shadow-sm'
+                            : 'border-slate-200 dark:border-slate-800 text-slate-505 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'
                         }`}
                       >
-                        {preset.name}
+                        {cat}
                       </button>
                     ))}
                   </div>
+
+                  {/* Horizontal scrolling grid of matches */}
+                  <div className="flex gap-3 overflow-x-auto py-2 scrollbar-none max-h-36">
+                    {PRESET_IMAGES.filter(img => selectedCoverCat === 'All' || img.category === selectedCoverCat).map((img, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setImageUrl(img.url);
+                          setImageConfirmed(true);
+                        }}
+                        className={`relative rounded-xl overflow-hidden h-20 w-32 shrink-0 border-2 cursor-pointer transition-all hover:scale-105 hover:shadow-md ${
+                          imageUrl === img.url
+                            ? 'border-teal-500 ring-2 ring-teal-550/25'
+                            : 'border-transparent'
+                        }`}
+                      >
+                        <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/45 hover:bg-transparent flex items-end p-1 transition-colors">
+                          <span className="text-[8px] font-bold text-white line-clamp-1">{img.name}</span>
+                        </div>
+                        {imageUrl === img.url && (
+                          <div className="absolute inset-0 bg-teal-500/30 flex items-center justify-center text-white font-extrabold text-sm shadow-inner">
+                            ✓
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 </div>
               </div>
 
@@ -1029,8 +1327,87 @@ const OrganizerDashboard = () => {
         </div>
       )}
 
+      {/* Mailbox Details Modal */}
+      {showMailboxModal && selectedMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-slate-850">
+              <div>
+                <h3 className="font-extrabold text-lg font-display flex items-center gap-1.5">
+                  📬 Read Email Letter
+                </h3>
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 font-mono">
+                  #MSG-{selectedMessage.id.toString().padStart(6, '0')}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setShowMailboxModal(false);
+                  setSelectedMessage(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-850 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-2 text-sm text-left">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Event Subject</span>
+                  <p className="font-extrabold text-slate-850 dark:text-white text-base">{selectedMessage.subject}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/40 dark:border-slate-800/40">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">From Attendee</span>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">{selectedMessage.senderName}</p>
+                    <p className="text-xs text-slate-450 dark:text-slate-400">{selectedMessage.senderEmail}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Regarding Event</span>
+                    <p className="font-semibold text-brand-600 dark:text-brand-400">{selectedMessage.event.title}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">ID: {selectedMessage.event.id}</p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-200/40 dark:border-slate-800/40">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Received Date</span>
+                  <p className="text-xs text-slate-600 dark:text-slate-350">{new Date(selectedMessage.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-left">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Message Content</span>
+                <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm leading-relaxed text-slate-750 dark:text-slate-300 min-h-[120px] whitespace-pre-wrap">
+                  {selectedMessage.message}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200/50 dark:border-slate-850">
+                <button
+                  onClick={() => handleDeleteMessage(selectedMessage.id)}
+                  className="px-4 py-2.5 bg-red-500 hover:bg-red-650 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMailboxModal(false);
+                    setSelectedMessage(null);
+                  }}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-250 font-bold text-xs rounded-xl transition-all border border-slate-200 dark:border-slate-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
 export default OrganizerDashboard;
+

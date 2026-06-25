@@ -9,9 +9,10 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [pendingEvents, setPendingEvents] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('approvals'); // approvals, users
+  const [activeTab, setActiveTab] = useState('approvals'); // approvals, users, events
 
   const fetchAdminData = async () => {
     try {
@@ -20,6 +21,9 @@ const AdminDashboard = () => {
 
       const pendingRes = await api.get('/admin/events/pending');
       setPendingEvents(pendingRes.data);
+
+      const eventsRes = await api.get('/admin/events');
+      setAllEvents(eventsRes.data);
 
       const usersRes = await api.get('/admin/users');
       setAllUsers(usersRes.data);
@@ -41,7 +45,7 @@ const AdminDashboard = () => {
       await api.put(`/admin/events/${eventId}/approve`);
       setPendingEvents(pendingEvents.filter(e => e.id !== eventId));
       alert('Event approved successfully!');
-      fetchAdminData(); // update stats
+      fetchAdminData(); // update stats and lists
     } catch (err) {
       alert('Failed to approve event.');
     }
@@ -56,7 +60,7 @@ const AdminDashboard = () => {
       await api.delete(`/admin/events/${eventId}/reject`);
       setPendingEvents(pendingEvents.filter(e => e.id !== eventId));
       alert('Event request rejected.');
-      fetchAdminData(); // update stats
+      fetchAdminData(); // update stats and lists
     } catch (err) {
       alert('Failed to reject event.');
     }
@@ -74,6 +78,22 @@ const AdminDashboard = () => {
       fetchAdminData(); // update stats
     } catch (err) {
       alert('Failed to delete user.');
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event? This will also remove all bookings and cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/events/${eventId}`);
+      setAllEvents(allEvents.filter(e => e.id !== eventId));
+      setPendingEvents(pendingEvents.filter(e => e.id !== eventId));
+      alert('Event deleted successfully.');
+      fetchAdminData(); // update stats
+    } catch (err) {
+      alert('Failed to delete event.');
     }
   };
 
@@ -161,6 +181,16 @@ const AdminDashboard = () => {
         >
           Manage Users ({allUsers.length})
         </button>
+        <button
+          onClick={() => setActiveTab('events')}
+          className={`pb-3 text-sm font-semibold transition-all border-b-2 ${
+            activeTab === 'events'
+              ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+              : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          Manage Events ({allEvents.length})
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -237,7 +267,7 @@ const AdminDashboard = () => {
               No pending approval requests. All organizer events are live!
             </div>
           )
-        ) : (
+        ) : activeTab === 'users' ? (
           // Users Tab
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
@@ -284,6 +314,70 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           </div>
+        ) : (
+          // Manage Events Tab
+          allEvents.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-850 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                    <th className="px-6 py-4">Event Details</th>
+                    <th className="px-6 py-4">Organizer</th>
+                    <th className="px-6 py-4">Location</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200/50 dark:divide-slate-850">
+                  {allEvents.map((event) => (
+                    <tr key={event.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                      <td className="px-6 py-4 flex items-center gap-3">
+                        <div className="h-10 w-14 bg-slate-100 dark:bg-slate-850 rounded-lg overflow-hidden shrink-0">
+                          <img
+                            src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=200&auto=format&fit=crop&q=60'}
+                            alt={event.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white line-clamp-1">{event.title}</p>
+                          <p className="text-xs text-brand-500">${event.price.toFixed(2)}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300 text-xs font-medium">
+                        {event.organizer.name}
+                        <p className="text-[10px] text-slate-400 font-mono">{event.organizer.email}</p>
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs line-clamp-1 mt-3">
+                        {event.location}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
+                          event.approved
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                        }`}>
+                          {event.approved ? 'Approved' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleDeleteEvent(event.id)}
+                          className="p-2 border border-slate-200 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg text-slate-500 hover:text-red-500 transition-colors inline-flex items-center gap-1.5 text-xs font-semibold"
+                        >
+                          <Trash2 className="h-4 w-4" /> Delete Event
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-16 text-center text-slate-400">
+              No events found in the database.
+            </div>
+          )
         )}
       </div>
 

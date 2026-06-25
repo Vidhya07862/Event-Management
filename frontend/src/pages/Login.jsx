@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, LogIn, ArrowRight, ArrowLeft, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import api from '../services/api';
 
 const Login = () => {
   const { login } = useAuth();
@@ -11,6 +12,40 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const [demoUsers, setDemoUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await api.get('/auth/users');
+        setDemoUsers(response.data || []);
+      } catch (err) {
+        console.error('Failed to fetch demo users', err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  const handleQuickLogin = (selectedUser) => {
+    const emailKey = selectedUser.email.toLowerCase().trim();
+    setEmail(selectedUser.email);
+    
+    // Look up saved password in localStorage
+    const savedPassword = localStorage.getItem(`demo_pass_${emailKey}`);
+    if (savedPassword) {
+      setPassword(savedPassword);
+    } else {
+      // Fallback default passwords for pre-seeded users
+      if (selectedUser.role === 'ROLE_ADMIN') {
+        setPassword('admin123');
+      } else if (selectedUser.role === 'ROLE_ORGANIZER') {
+        setPassword('organizer123');
+      } else {
+        setPassword('user123');
+      }
+    }
+  };
 
   // Mouse Tilt Gesture State
   const [tiltStyle, setTiltStyle] = useState({});
@@ -93,6 +128,60 @@ const Login = () => {
         {error && (
           <div className="p-3.5 bg-red-50 border border-red-200 dark:bg-red-950/20 dark:border-red-900/50 rounded-xl text-xs font-semibold text-red-650 dark:text-red-400 transition-all duration-300">
             {error}
+          </div>
+        )}
+
+        {/* Quick Demo Accounts Helper */}
+        {demoUsers.length > 0 && (
+          <div className="border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-4 bg-slate-50/50 dark:bg-slate-900/30 space-y-3">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center flex items-center justify-center gap-1">
+              💡 Click to Autofill Demo Account
+            </p>
+            <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 max-h-32">
+              {demoUsers.map((u) => {
+                let roleLabel = "Attendee";
+                if (u.role === 'ROLE_ADMIN') roleLabel = "Admin";
+                if (u.role === 'ROLE_ORGANIZER') roleLabel = "Organizer";
+
+                const emailKey = u.email.toLowerCase().trim();
+                const savedPassword = localStorage.getItem(`demo_pass_${emailKey}`);
+                let displayPass = savedPassword;
+                if (!displayPass) {
+                  if (u.role === 'ROLE_ADMIN') displayPass = 'admin123';
+                  else if (u.role === 'ROLE_ORGANIZER') displayPass = 'organizer123';
+                  else displayPass = 'user123';
+                }
+
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => handleQuickLogin(u)}
+                    className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-teal-500 hover:bg-teal-50/10 dark:hover:bg-teal-950/20 transition-all group shrink-0 min-w-[130px] max-w-[170px] hover:scale-[1.03]"
+                    title={`Email: ${u.email} | Password: ${displayPass}`}
+                  >
+                    <span className="text-[10px] font-extrabold text-slate-700 dark:text-slate-350 truncate w-full text-center">
+                      {u.name}
+                    </span>
+                    <span className="text-[8px] text-slate-400 dark:text-slate-500 mt-0.5 truncate w-full text-center">
+                      {u.email}
+                    </span>
+                    <span className="text-[8px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                      Pass: {displayPass}
+                    </span>
+                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded mt-1.5 tracking-wider uppercase ${
+                      u.role === 'ROLE_ADMIN' 
+                        ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' 
+                        : u.role === 'ROLE_ORGANIZER' 
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                        : 'bg-teal-500/10 text-teal-650 dark:text-teal-400'
+                    }`}>
+                      {roleLabel}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 

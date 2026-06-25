@@ -12,6 +12,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -56,5 +59,20 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
         return ResponseEntity.ok(userDetails);
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<Map<String, Object>>> getDemoUsers() {
+        List<User> users = authService.getAllUsers();
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (User u : users) {
+            Map<String, Object> uMap = new HashMap<>();
+            uMap.put("id", u.getId());
+            uMap.put("name", u.getName());
+            uMap.put("email", u.getEmail());
+            uMap.put("role", u.getRole() != null ? u.getRole().name() : "");
+            response.add(uMap);
+        }
+        return ResponseEntity.ok(response);
     }
 }

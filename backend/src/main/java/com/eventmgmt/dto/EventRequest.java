@@ -16,7 +16,6 @@ public record EventRequest(
     String location,
 
     @NotNull(message = "Event date is required")
-    @Future(message = "Event date must be in the future")
     LocalDateTime date,
 
     @NotNull(message = "Price is required")

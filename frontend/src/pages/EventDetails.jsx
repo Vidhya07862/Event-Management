@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Calendar, MapPin, DollarSign, User as UserIcon, Ticket, ArrowLeft, ShieldCheck, CreditCard, ChevronRight } from 'lucide-react';
+import { Calendar, MapPin, DollarSign, User as UserIcon, Ticket, ArrowLeft, ShieldCheck, CreditCard, ChevronRight, CheckCircle2, Trash2, Mail } from 'lucide-react';
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -29,20 +29,106 @@ const EventDetails = () => {
   const [cardHolderName, setCardHolderName] = useState('');
   const [upiId, setUpiId] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [userBooking, setUserBooking] = useState(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactSubject, setContactSubject] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactLoading, setContactLoading] = useState(false);
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    if (user) {
+      setContactName(user.name || '');
+      setContactEmail(user.email || '');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const fetchEventAndBooking = async () => {
       try {
         const response = await api.get(`/events/${id}`);
         setEvent(response.data);
+        
+        // Fetch active user booking if attendee
+        if (user && user.role === 'ROLE_USER') {
+          const bookingsRes = await api.get('/bookings/my');
+          const booking = bookingsRes.data.find(b => b.event.id === parseInt(id) && (b.status === 'CONFIRMED' || b.status === 'PENDING'));
+          if (booking) {
+            setUserBooking(booking);
+          }
+        }
       } catch (err) {
         setError('Event not found or failed to load.');
       } finally {
         setLoading(false);
       }
     };
-    fetchEvent();
-  }, [id]);
+    fetchEventAndBooking();
+  }, [id, user]);
+
+  const handleCancelBooking = async () => {
+    if (!userBooking) return;
+    if (!window.confirm('Are you sure you want to cancel your booking for this event?')) {
+      return;
+    }
+
+    setCancelLoading(true);
+    try {
+      await api.post(`/bookings/${userBooking.id}/cancel`);
+      alert('Booking cancelled successfully.');
+      setUserBooking(null);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to cancel booking.');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!window.confirm('Are you sure you want to delete this event? This will also remove all bookings and cannot be undone.')) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/events/${event.id}`);
+      alert('Event deleted successfully.');
+      navigate('/events');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete event.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleSendEmail = async (e) => {
+    e.preventDefault();
+    if (!contactSubject.trim() || !contactMessage.trim()) {
+      alert('Subject and Message are required.');
+      return;
+    }
+    setContactLoading(true);
+    try {
+      await api.post('/messages', {
+        eventId: event.id,
+        senderName: contactName,
+        senderEmail: contactEmail,
+        subject: contactSubject,
+        message: contactMessage
+      });
+      alert('Your email letter has been successfully sent to the organizer!');
+      setContactSubject('');
+      setContactMessage('');
+      setShowContactModal(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send message.');
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
 
   const handleBookTickets = async () => {
     if (!user) {
@@ -250,44 +336,72 @@ const EventDetails = () => {
 
             {/* Booking Actions */}
             {!isOrganizerOrAdmin ? (
-              <div className="space-y-4 pt-4 border-t border-slate-200/50 dark:border-slate-800/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Quantity</span>
-                  <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+              userBooking ? (
+                <div className="space-y-4 pt-4 border-t border-slate-200/50 dark:border-slate-800/50">
+                  <div className="p-3.5 bg-emerald-50/50 border border-emerald-200/40 dark:bg-emerald-950/20 dark:border-emerald-900/40 rounded-2xl flex items-start gap-2.5">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-450 shrink-0 mt-0.5" />
+                    <div className="text-xs text-emerald-800 dark:text-emerald-300">
+                      <p className="font-bold">You are registered!</p>
+                      <p className="mt-0.5">You have booked {userBooking.ticketCount} {userBooking.ticketCount === 1 ? 'ticket' : 'tickets'} for this event.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
                     <button
-                      onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
-                      className="font-bold text-slate-600 dark:text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 text-lg transition-colors"
+                      onClick={() => navigate(`/bookings/${userBooking.id}/confirmation`)}
+                      className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-250 font-bold rounded-xl text-xs text-center transition-all"
                     >
-                      -
+                      View Ticket Pass
                     </button>
-                    <span className="font-bold text-sm w-4 text-center text-slate-900 dark:text-slate-100">{ticketCount}</span>
                     <button
-                      onClick={() => setTicketCount(ticketCount + 1)}
-                      className="font-bold text-slate-600 dark:text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 text-lg transition-colors"
+                      onClick={handleCancelBooking}
+                      disabled={cancelLoading}
+                      className="w-full py-2.5 bg-red-500 hover:bg-red-650 text-white font-bold rounded-xl text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                     >
-                      +
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {cancelLoading ? 'Cancelling Ticket...' : 'Cancel Booking'}
                     </button>
                   </div>
                 </div>
+              ) : (
+                <div className="space-y-4 pt-4 border-t border-slate-200/50 dark:border-slate-800/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Quantity</span>
+                    <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                      <button
+                        onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
+                        className="font-bold text-slate-600 dark:text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 text-lg transition-colors"
+                      >
+                        -
+                      </button>
+                      <span className="font-bold text-sm w-4 text-center text-slate-900 dark:text-slate-100">{ticketCount}</span>
+                      <button
+                        onClick={() => setTicketCount(ticketCount + 1)}
+                        className="font-bold text-slate-600 dark:text-slate-400 hover:text-brand-500 dark:hover:text-brand-400 text-lg transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
 
-                <div className="flex items-center justify-between text-sm pt-2">
-                  <span className="font-medium text-slate-500">Total Price:</span>
-                  <span className="font-bold text-lg text-gradient">
-                    {event.price === 0 ? 'Free' : `$${(event.price * ticketCount).toFixed(2)}`}
-                  </span>
+                  <div className="flex items-center justify-between text-sm pt-2">
+                    <span className="font-medium text-slate-500">Total Price:</span>
+                    <span className="font-bold text-lg text-gradient">
+                      {event.price === 0 ? 'Free' : `$${(event.price * ticketCount).toFixed(2)}`}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={handleBookTickets}
+                    disabled={bookingLoading}
+                    className="w-full flex items-center justify-center gap-1.5 py-3 px-4 text-white bg-gradient-brand shadow-sm hover:shadow-brand-500/20 font-semibold rounded-xl text-sm transition-all disabled:opacity-50"
+                  >
+                    <Ticket className="h-4 w-4" />
+                    {bookingLoading ? 'Processing...' : user ? 'Book Tickets' : 'Sign In to Book'}
+                  </button>
                 </div>
-
-                <button
-                  onClick={handleBookTickets}
-                  disabled={bookingLoading}
-                  className="w-full flex items-center justify-center gap-1.5 py-3 px-4 text-white bg-gradient-brand shadow-sm hover:shadow-brand-500/20 font-semibold rounded-xl text-sm transition-all disabled:opacity-50"
-                >
-                  <Ticket className="h-4 w-4" />
-                  {bookingLoading ? 'Processing...' : user ? 'Book Tickets' : 'Sign In to Book'}
-                </button>
-              </div>
+              )
             ) : (
-              <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800/50">
+              <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800/50 space-y-4">
                 <div className="p-3.5 bg-brand-50/50 border border-brand-200/40 dark:bg-brand-950/20 dark:border-brand-900/40 rounded-2xl flex items-start gap-2.5">
                   <ShieldCheck className="h-5 w-5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
                   <div className="text-xs text-brand-800 dark:text-brand-300">
@@ -295,9 +409,38 @@ const EventDetails = () => {
                     <p className="mt-0.5">Booking options are disabled for organizers and admins.</p>
                   </div>
                 </div>
+                {user && (user.role === 'ROLE_ADMIN' || event.organizer.id === user.id) && (
+                  <button
+                    onClick={handleDeleteEvent}
+                    disabled={deleteLoading}
+                    className="w-full py-2.5 bg-red-500 hover:bg-red-650 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-md"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {deleteLoading ? 'Deleting event...' : 'Delete Event'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {(!user || user.id !== event.organizer.id) && (
+              <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800/50">
+                <button
+                  onClick={() => {
+                    if (!user) {
+                      navigate('/login');
+                    } else {
+                      setShowContactModal(true);
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 text-slate-700 dark:text-slate-250 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 font-bold rounded-xl text-xs transition-all shadow-sm"
+                >
+                  <Mail className="h-4 w-4 text-brand-500" />
+                  Report Issue / Contact Organizer
+                </button>
               </div>
             )}
           </div>
+
         </div>
       </div>
 
@@ -477,8 +620,87 @@ const EventDetails = () => {
           </div>
         </div>
       )}
+
+      {/* Contact Organizer Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 animate-in zoom-in-95 duration-200 max-h-[95vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-slate-850">
+              <h3 className="font-extrabold text-lg flex items-center gap-2 font-display">
+                <Mail className="h-5 w-5 text-brand-500" />
+                Contact Organizer
+              </h3>
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="text-slate-400 hover:text-slate-650 dark:hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSendEmail} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Your Name</label>
+                <input
+                  type="text"
+                  required
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/50 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  placeholder="Your Name"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Your Email</label>
+                <input
+                  type="email"
+                  required
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/50 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  placeholder="your.email@example.com"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Subject</label>
+                <input
+                  type="text"
+                  required
+                  value={contactSubject}
+                  onChange={(e) => setContactSubject(e.target.value)}
+                  className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/50 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  placeholder="e.g. Booking issue, event questions, etc."
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Message</label>
+                <textarea
+                  required
+                  rows="4"
+                  value={contactMessage}
+                  onChange={(e) => setContactMessage(e.target.value)}
+                  className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/50 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+                  placeholder="Type your message here..."
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                disabled={contactLoading}
+                className="w-full flex items-center justify-center gap-1.5 py-3 bg-gradient-brand text-white font-semibold rounded-xl text-sm shadow-md hover:shadow-brand-500/20 transition-all disabled:opacity-50"
+              >
+                {contactLoading ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 
 export default EventDetails;

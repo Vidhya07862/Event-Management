@@ -2,9 +2,12 @@ package com.eventmgmt.service;
 
 import com.eventmgmt.dto.EventRequest;
 import com.eventmgmt.model.Event;
+import com.eventmgmt.model.Booking;
 import com.eventmgmt.model.Role;
 import com.eventmgmt.model.User;
 import com.eventmgmt.repository.EventRepository;
+import com.eventmgmt.repository.BookingRepository;
+import com.eventmgmt.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +17,20 @@ import java.util.List;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final BookingRepository bookingRepository;
+    private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(
+            EventRepository eventRepository,
+            BookingRepository bookingRepository,
+            PaymentRepository paymentRepository,
+            NotificationService notificationService
+    ) {
         this.eventRepository = eventRepository;
+        this.bookingRepository = bookingRepository;
+        this.paymentRepository = paymentRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -73,6 +87,21 @@ public class EventService {
             throw new IllegalStateException("You are not authorized to delete this event");
         }
 
+        // If deleted by Admin and not approved, it's a rejection!
+        if (user.getRole() == Role.ROLE_ADMIN && !event.isApproved()) {
+            notificationService.createNotification(
+                event.getOrganizer(),
+                "❌ Your event request '" + event.getTitle() + "' has been rejected by the Admin."
+            );
+        }
+
+        // Cascade delete bookings and their payments to prevent foreign key errors
+        List<Booking> bookings = bookingRepository.findByEventId(eventId);
+        for (Booking booking : bookings) {
+            paymentRepository.findByBookingId(booking.getId()).ifPresent(paymentRepository::delete);
+            bookingRepository.delete(booking);
+        }
+
         eventRepository.delete(event);
     }
 
@@ -106,5 +135,9 @@ public class EventService {
             return getApprovedEvents();
         }
         return eventRepository.searchApprovedEvents(query);
+    }
+
+    public List<Event> getAllEvents() {
+        return eventRepository.findAll();
     }
 }

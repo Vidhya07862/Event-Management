@@ -25,15 +25,53 @@ public class ImageSearchController {
     private final HttpClient httpClient = HttpClient.newBuilder().build();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private static final List<String> UNSAFE_KEYWORDS = List.of(
+        // Sexual, suggestive, posing, and revealing content
+        "nude", "naked", "porn", "sexy", "erotic", "sexual", "nsfw", "hentai", "underwear", "bikini",
+        "sensual", "vulgar", "xxx", "adult", "lingerie", "swimsuit", "swimwear", "cleavage", "bra",
+        "panties", "model", "posing", "pose", "skin", "bare", "undressed", "sensuous", "flirting",
+        "seductive", "alluring", "legs", "breast", "chest", "butt", "belly", "torso", "body",
+        "hot girl", "hot woman", "sexy girl", "sexy woman", "sensual dance", "clubbing", "clubber",
+        "nightclub", "rave", "provocative", "romantic", "intimate",
+
+        // Human, gender, and people filters to strictly prevent photos of revealing models
+        "girl", "girls", "woman", "women", "lady", "ladies", "female", "females",
+        "man", "men", "male", "males", "boy", "boys", "guy", "guys",
+        "person", "people", "human", "humans", "face", "faces", "portrait", "portraits",
+        "beauty", "glamour", "fashion", "dress", "clothing", "attire",
+        
+        // Violent content
+        "blood", "gore", "kill", "murder", "weapon", "gun", "knife", "dead", "death", "suicide",
+        "violence", "violent", "shoot", "assault", "stab", "weaponry"
+    );
+
+    private boolean isUnsafe(String text) {
+        if (text == null) return false;
+        String lower = text.toLowerCase();
+        for (String keyword : UNSAFE_KEYWORDS) {
+            if (lower.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
     public ResponseEntity<List<String>> searchImages(@RequestParam("q") String query) {
         if (query == null || query.trim().isEmpty()) {
             return ResponseEntity.ok(List.of());
         }
+        
+        // Safety check on query keywords
+        if (isUnsafe(query)) {
+            return ResponseEntity.ok(getDefaultImages("safe"));
+        }
+
         try {
             String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
-            String url = "https://api.openverse.org/v1/images/?q=" + encodedQuery + "&page_size=30";
+            // Query Openverse with mature=false to filter out mature content
+            String url = "https://api.openverse.org/v1/images/?q=" + encodedQuery + "&page_size=20&mature=false";
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -56,6 +94,34 @@ public class ImageSearchController {
                     JsonNode urlNode = node.get("url");
                     if (urlNode != null) {
                         String imageUrl = urlNode.asText();
+                        
+                        // 1. Safety check on returned image URL keywords
+                        if (isUnsafe(imageUrl)) {
+                            continue;
+                        }
+
+                        // 2. Safety check on returned image title
+                        JsonNode titleNode = node.get("title");
+                        if (titleNode != null && isUnsafe(titleNode.asText())) {
+                            continue;
+                        }
+
+                        // 3. Safety check on returned image tags
+                        JsonNode tagsNode = node.get("tags");
+                        boolean hasUnsafeTag = false;
+                        if (tagsNode != null && tagsNode.isArray()) {
+                            for (JsonNode tag : tagsNode) {
+                                JsonNode tagNameNode = tag.get("name");
+                                if (tagNameNode != null && isUnsafe(tagNameNode.asText())) {
+                                    hasUnsafeTag = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (hasUnsafeTag) {
+                            continue;
+                        }
+
                         // Filter for common image extensions or clean flickr/unsplash static image patterns
                         String lowerUrl = imageUrl.toLowerCase();
                         if (lowerUrl.matches(".*\\.(jpg|jpeg|png|webp|gif).*") || imageUrl.contains("staticflickr.com") || imageUrl.contains("unsplash.com")) {
