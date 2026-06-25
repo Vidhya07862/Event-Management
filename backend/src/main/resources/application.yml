@@ -36,6 +36,10 @@ security:
     secret-key: dGhpcy1pcy1hLXNlY3VyZS1hbmQtc3Ryb25nLWtleS1mb3Itand0LWF1dGhlbnRpY2F0aW9uLWV2ZW50LW1hbmFnZW1lbnQtc3lzdGVt
     expiration-time: 86400000 # 24 hours in ms
 
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+
 ---
 # MySQL Profile config. Run with: --spring.profiles.active=mysql
 spring:

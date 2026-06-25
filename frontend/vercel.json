@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-backend-url.com/api/:path*"
+      "destination": "https://event-management-backend-ngzx.onrender.com/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
