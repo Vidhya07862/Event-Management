@@ -258,9 +258,9 @@ const EventDetails = () => {
       </button>
 
       {/* Main Details Grid */}
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Side: Event Details */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           <div className="rounded-2xl overflow-hidden h-[400px] bg-slate-100 dark:bg-slate-900 border border-slate-200/20 shadow-lg">
             <img
               src={event.imageUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&auto=format&fit=crop&q=80'}
@@ -489,7 +489,7 @@ const EventDetails = () => {
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide">
                 Select Payment Platform
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {['Credit Card', 'PhonePe', 'Google Pay', 'Navi'].map((method) => (
                   <label
                     key={method}

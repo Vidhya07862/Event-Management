@@ -212,7 +212,7 @@ const Events = () => {
 
       {/* Events Grid */}
       {loading ? (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((idx) => (
             <div key={idx} className="glass-card rounded-2xl overflow-hidden h-96 animate-pulse p-4 flex flex-col justify-between">
               <div className="h-48 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
@@ -225,7 +225,7 @@ const Events = () => {
           ))}
         </div>
       ) : filteredEvents.length > 0 ? (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => (
             <div key={event.id} className="glass-card rounded-2xl overflow-hidden flex flex-col h-full hover:-translate-y-1 transition-all">
               <div className="relative h-48 bg-slate-100 dark:bg-slate-900">
@@ -351,7 +351,7 @@ const Events = () => {
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide">
                 Person / Attendee Details
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wide">Full Name</label>
                   <input
@@ -382,7 +382,7 @@ const Events = () => {
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide">
                 Select Payment Platform
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {['Credit Card', 'PhonePe', 'Google Pay', 'Navi'].map((method) => (
                   <label
                     key={method}

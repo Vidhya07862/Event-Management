@@ -309,7 +309,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {events.length > 0 ? (
               events.map((event) => (
                 <div key={event.id} className="glass-panel rounded-2xl overflow-hidden flex flex-col h-full transition-all duration-300 hover:-translate-y-2 border border-slate-200 dark:border-slate-800 shadow-xl group">
@@ -403,7 +403,7 @@ const Home = () => {
           </div>
 
           {/* Workflow Steps Grid */}
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {flowSteps[activeTab].map((step, idx) => (
               <Link 
                 key={idx} 

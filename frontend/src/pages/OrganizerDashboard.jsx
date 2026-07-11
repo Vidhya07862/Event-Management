@@ -492,7 +492,7 @@ const OrganizerDashboard = () => {
       {activeTab === 'events' ? (
         <>
           {/* Analytics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="glass-panel p-6 rounded-2xl flex items-center gap-4 border border-slate-200/50 dark:border-slate-800/50">
               <div className="p-3.5 bg-blue-500/10 text-blue-600 rounded-xl">
                 <Calendar className="h-6 w-6" />
@@ -988,7 +988,7 @@ const OrganizerDashboard = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Date & Time</label>
                   <input
@@ -1357,7 +1357,7 @@ const OrganizerDashboard = () => {
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Event Subject</span>
                   <p className="font-extrabold text-slate-850 dark:text-white text-base">{selectedMessage.subject}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/40 dark:border-slate-800/40">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200/40 dark:border-slate-800/40">
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">From Attendee</span>
                     <p className="font-semibold text-slate-800 dark:text-slate-200">{selectedMessage.senderName}</p>

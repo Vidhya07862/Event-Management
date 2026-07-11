@@ -119,10 +119,10 @@ const BookingConfirmation = () => {
         </div>
 
         {/* Ticket Body */}
-        <div className="p-8 grid md:grid-cols-3 gap-8 items-center">
+        <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
           
           {/* Main Info */}
-          <div className="md:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             <div className="space-y-1">
               <span className="text-[10px] uppercase font-bold tracking-wider text-brand-500">Event Pass</span>
               <h3 className="text-xl font-bold font-display">{booking.event.title}</h3>
